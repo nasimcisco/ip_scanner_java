@@ -1,0 +1,143 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package hello_world;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+
+class MyThread extends Thread{
+
+ public class Status {
+  
+  String status ;
+  String status2 ;
+  
+  public Status(String status, String status2){
+     this.status =status;
+     this.status2 =status2;
+  
+  }
+  }
+    
+  public  static HashMap<String,Status> hm=new HashMap<String,Status>();  
+  static void gt(){
+      
+ for(Map.Entry<String,Status> entry:hm.entrySet()){    
+        String key=entry.getKey();  
+        Status b=entry.getValue();  
+         
+        //System.out.println(key+" "+ b.status+" "+b.status2);
+ }   
+   TreeMap<String, Status> sorted = new TreeMap<>(); 
+   sorted.putAll(hm);
+    for (Map.Entry<String, Status> entry : sorted.entrySet())  
+            System.out.println("Key = " + entry.getKey() +  
+                                     ", Value = " + entry.getValue().status + " "+entry.getValue().status2);    
+  }
+ 
+  
+  public static int count;
+  public static int count1;
+  public static  int count() {
+      return count;
+        
+    }
+
+  
+  
+ CountDownLatch ch ;
+ String ip;
+ String j;
+
+   public MyThread(String j,CountDownLatch ch,String ip){
+      this.ip = ip;
+      this.ch=ch;
+      this.j= j;
+      
+   }
+ 
+   public void run(){
+       
+  
+       
+        
+        
+        
+        String pingResult = "";
+        String pingCmd = "ping " + ip +" -n 2" ;
+        String status = "";
+        String status2 ="";
+
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec(pingCmd);
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    //System.out.println(inputLine);
+                    pingResult += inputLine;
+                }
+            }
+
+            if (pingResult.contains("unreachable") || pingResult.contains("out")) {
+                //System.out.println (ip + " is offline");
+                status  =" offline";
+                status2 =" --" ;
+                count++;
+               
+                
+               
+
+            } else {
+                //System.out.println (ip + " is online average letency " +pingResult.substring(pingResult.length() - 4, pingResult.length()));
+                //status =ip + " is online average letency " +pingResult.substring(pingResult.length() - 4, pingResult.length());
+                status =" online";
+                status2 = " "+pingResult.substring(pingResult.length() - 4, pingResult.length());
+                    
+            }
+            ch.countDown();
+            
+            Status  j= new Status(status,status2);
+            hm.put(ip, j);
+
+        } catch (IOException e) {
+            System.out.println (e.toString());
+        }
+   }
+}
+
+
+public class PingThread {  
+     public static void main(String args[]) throws InterruptedException{  
+         
+     CountDownLatch ch =new CountDownLatch(100); 
+     String iprange1 = "10.10.0.";
+     String iprange2 = "";
+     String hostalive = "";
+     int i;
+     for (i = 1; i <= 100; i++) {
+            iprange2 = iprange1 + i;
+            String j =String.valueOf(i);
+            new MyThread(j,ch,iprange2).start();
+            System.out.println("total thread :"+Thread.activeCount());
+     }
+         
+         ch.await();
+         System.out.println("total offline host :::: " +MyThread.count());
+         MyThread.gt();
+         
+      
+         
+     }  
+} 
